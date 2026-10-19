@@ -1,0 +1,41 @@
+# Local credentials and environment files
+.env
+server/.env
+server/.env.*
+!.env.example
+!server/.env.example
+
+# Python environments and generated test/runtime files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node.js dependencies
+node_modules/
+server/node_modules/
+*/node_modules/
+
+# Cloud placeholder / duplicate folder
+Amazon Sale Report.csv/
+
+# Root placeholder files (real package files reside in server/)
+/package.json
+/package-lock.json
+
+# Local analytics database and SQLite sidecars
+data/sqlite/*.db
+data/sqlite/*.db-*
+
+# Large raw datasets and local exports
+raw_amazon_sale_report.csv
+data/raw/
+data/cleaned/
+data/updated/
+data/powerbi/*.csv
+
+# Temporary files and logs
+*.log
+scratch/
+.system_generated/

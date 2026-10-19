@@ -1,0 +1,137 @@
+// Measures use the project fact-table grain: one row per Order_Item_ID.
+// Currency columns are formatted as INR in Power BI; percentage measures return ratios.
+
+Total Sales =
+SUM ( fact_orders[Net_Sales] )
+
+Gross Merchandise Value =
+SUM ( fact_orders[Gross_Amount] )
+
+Total Gross Profit =
+SUM ( fact_orders[Gross_Profit] )
+
+Gross Profit Margin =
+DIVIDE ( [Total Gross Profit], [Total Sales] )
+
+Distinct Orders =
+CALCULATE (
+    DISTINCTCOUNT ( fact_orders[Order_ID] ),
+    fact_orders[Order_ID] <> BLANK ()
+)
+
+Units Sold =
+CALCULATE (
+    SUM ( fact_orders[Quantity] ),
+    fact_orders[Order_Status_Group] IN { "Delivered", "Shipped" },
+    fact_orders[Quantity] <> BLANK ()
+)
+
+Average Order Value =
+DIVIDE (
+    CALCULATE ( [Total Sales], fact_orders[Order_ID] <> BLANK () ),
+    [Distinct Orders]
+)
+
+Average Selling Price =
+DIVIDE ( [Total Sales], [Units Sold] )
+
+Distinct Customers =
+CALCULATE (
+    DISTINCTCOUNT ( fact_orders[Customer_ID] ),
+    fact_orders[Customer_ID] <> BLANK ()
+)
+
+Cancelled Orders =
+CALCULATE (
+    [Distinct Orders],
+    KEEPFILTERS ( fact_orders[Order_Status_Group] = "Cancelled" )
+)
+
+Cancellation Rate =
+DIVIDE ( [Cancelled Orders], [Distinct Orders] )
+
+Cancelled GMV =
+CALCULATE (
+    SUM ( fact_orders[Gross_Amount] ),
+    KEEPFILTERS ( fact_orders[Order_Status_Group] = "Cancelled" )
+)
+
+Returned Orders =
+CALCULATE (
+    [Distinct Orders],
+    KEEPFILTERS ( fact_orders[Order_Status_Group] = "Returned" )
+)
+
+Return Rate =
+DIVIDE ( [Returned Orders], [Distinct Orders] )
+
+Delivered Orders =
+CALCULATE (
+    [Distinct Orders],
+    KEEPFILTERS ( fact_orders[Order_Status_Group] = "Delivered" )
+)
+
+Shipped or Delivered Orders =
+CALCULATE (
+    [Distinct Orders],
+    KEEPFILTERS ( fact_orders[Order_Status_Group] IN { "Delivered", "Shipped" } )
+)
+
+Fulfillment Success Rate =
+DIVIDE ( [Shipped or Delivered Orders], [Distinct Orders] )
+
+Amazon Fulfillment Sales =
+CALCULATE (
+    [Total Sales],
+    KEEPFILTERS ( fact_orders[Fulfilment_Method] = "Amazon" )
+)
+
+Merchant Fulfillment Sales =
+CALCULATE (
+    [Total Sales],
+    KEEPFILTERS ( fact_orders[Fulfilment_Method] = "Merchant" )
+)
+
+Category Sales Share =
+DIVIDE (
+    [Total Sales],
+    CALCULATE ( [Total Sales], REMOVEFILTERS ( dim_products[Category] ) )
+)
+
+Product Sales Rank =
+RANKX (
+    ALLSELECTED ( dim_products[Product_ID] ),
+    [Total Sales],
+    ,
+    DESC,
+    DENSE
+)
+
+Product Units Rank =
+RANKX (
+    ALLSELECTED ( dim_products[Product_ID] ),
+    [Units Sold],
+    ,
+    DESC,
+    DENSE
+)
+
+Prior Month Sales =
+CALCULATE (
+    [Total Sales],
+    PREVIOUSMONTH ( dim_dates[Date_ISO] )
+)
+
+Month-over-Month Sales Change =
+VAR PriorSales = [Prior Month Sales]
+RETURN
+    IF ( ISBLANK ( PriorSales ), BLANK (), [Total Sales] - PriorSales )
+
+Month-over-Month Sales Change % =
+VAR PriorSales = [Prior Month Sales]
+RETURN
+    IF (
+        ISBLANK ( PriorSales ) || PriorSales = 0,
+        BLANK (),
+        DIVIDE ( [Total Sales] - PriorSales, PriorSales )
+    )
